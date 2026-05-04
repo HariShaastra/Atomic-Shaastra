@@ -5,7 +5,7 @@ import { Check, X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 interface DailyTrackerProps {
   habits: Habit[];
   logs: HabitLog[];
-  toggleHabit: (id: number, date: string) => void;
+  toggleHabit: (id: string, date: string) => void;
 }
 
 export default function DailyTracker({ habits, logs, toggleHabit }: DailyTrackerProps) {
@@ -16,24 +16,30 @@ export default function DailyTracker({ habits, logs, toggleHabit }: DailyTracker
     return d.toISOString().split('T')[0];
   });
 
+  const getOverallStats = () => {
+    if (habits.length === 0) return 0;
+    const totalPossibleSlots = habits.length * 30;
+    const completedSlots = logs.filter(l => dates.includes(l.completed_at)).length;
+    return Math.round((completedSlots / totalPossibleSlots) * 100);
+  };
+
   return (
-    <div className="max-w-full mx-auto space-y-6 md:space-y-8 pb-10">
+    <div className="max-w-full mx-auto space-y-12 pb-20">
       <div className="px-1 md:px-0">
-        <h2 className="text-2xl md:text-3xl font-bold text-deepblue-900">Daily Tracker</h2>
-        <p className="text-sm md:text-base text-deepblue-900/60">Visualize your consistency over the past 30 days.</p>
+        <h2 className="text-4xl font-black text-brand-dark tracking-tighter">History</h2>
+        <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Visual evidence of your evolution.</p>
       </div>
 
-      <div className="card bg-white overflow-x-auto p-0 border-beige-200">
+      <div className="card bg-white overflow-x-auto p-0 border-none shadow-2xl shadow-brand-dark/5 ring-1 ring-brand-dark/5">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-beige-100">
-              <th className="p-4 text-left text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40 sticky left-0 bg-white z-10 min-w-[150px] border-r border-beige-100">Habit</th>
+            <tr className="border-b border-slate-100">
+              <th className="p-6 text-left text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark/30 sticky left-0 bg-white z-10 min-w-[150px] border-r border-slate-100">System</th>
               {dates.map((date, index) => (
                 <th key={date} className="p-2 text-center min-w-[45px]">
                   <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-bold uppercase tracking-widest text-deepblue-900/40">Day</span>
-                    <span className={`text-xs font-bold mt-1 w-7 h-7 flex items-center justify-center rounded-full ${date === today.toISOString().split('T')[0] ? 'bg-deepblue-900 text-white' : 'text-deepblue-900'}`}>
-                      {index + 1}
+                    <span className={`text-[10px] font-black mt-1 w-8 h-8 flex items-center justify-center rounded-xl ${date === today.toISOString().split('T')[0] ? 'bg-brand-primary text-white shadow-lg' : 'text-brand-dark/40'}`}>
+                      {new Date(date).getDate()}
                     </span>
                   </div>
                 </th>
@@ -43,16 +49,16 @@ export default function DailyTracker({ habits, logs, toggleHabit }: DailyTracker
           <tbody>
             {habits.length === 0 ? (
               <tr>
-                <td colSpan={31} className="p-12 text-center text-deepblue-900/30 italic">
-                  No habits defined yet. Go to the Habits section to start.
+                <td colSpan={31} className="p-20 text-center text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark/20">
+                  No systems online
                 </td>
               </tr>
             ) : (
               habits.map(habit => (
-                <tr key={habit.id} className="border-b border-beige-50 hover:bg-beige-50/50 transition-colors">
-                  <td className="p-4 sticky left-0 bg-white z-10 border-r border-beige-100">
-                    <div className="font-bold text-sm text-deepblue-900 truncate max-w-[140px]">{habit.name}</div>
-                    <div className="text-[10px] text-deepblue-900/40 uppercase tracking-tight">{habit.category}</div>
+                <tr key={habit.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                  <td className="p-6 sticky left-0 bg-white z-10 border-r border-slate-100">
+                    <div className="font-black text-sm text-brand-dark tracking-tight">{habit.name}</div>
+                    <div className="text-[9px] font-bold text-brand-dark/20 uppercase tracking-widest">{habit.category}</div>
                   </td>
                   {dates.map(date => {
                     const isCompleted = logs.some(l => l.habit_id === habit.id && l.completed_at === date);
@@ -62,15 +68,15 @@ export default function DailyTracker({ habits, logs, toggleHabit }: DailyTracker
                       <td key={date} className="p-2 text-center">
                         <button
                           onClick={() => toggleHabit(habit.id, date)}
-                          className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
                             isCompleted 
-                              ? 'bg-emerald-500 text-white shadow-sm' 
+                              ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20 scale-110' 
                               : isToday 
-                                ? 'border-2 border-deepblue-900/20 hover:border-deepblue-900/40' 
-                                : 'bg-beige-100 hover:bg-beige-200'
+                                ? 'border-2 border-brand-primary/20 hover:border-brand-primary/40' 
+                                : 'bg-slate-100 hover:bg-slate-200'
                           }`}
                         >
-                          {isCompleted ? <Check className="w-3 h-3" /> : null}
+                          {isCompleted ? <Check className="w-4 h-4" /> : null}
                         </button>
                       </td>
                     );
@@ -82,23 +88,22 @@ export default function DailyTracker({ habits, logs, toggleHabit }: DailyTracker
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card bg-beige-100 border-none p-6">
-          <h3 className="font-bold text-deepblue-900 mb-2">Consistency is Key</h3>
-          <p className="text-sm text-deepblue-900/60 leading-relaxed">
-            Don't break the chain. If you miss a day, your only goal is to not miss two days in a row. 
-            The tracker helps you see the visual evidence of your new identity.
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="card bg-brand-dark text-white border-none p-10 flex flex-col justify-center">
+          <h3 className="font-black text-xl mb-4 tracking-tight">The Unbroken Chain</h3>
+          <p className="text-sm font-medium text-white/50 leading-relaxed">
+            Never miss twice. If you fail today, ensure tomorrow is a success. This tracker isn't for score, it's for momentum.
           </p>
         </div>
-        <div className="card bg-white p-6 flex items-center justify-between">
+        <div className="card bg-white p-10 flex items-center justify-between shadow-2xl shadow-brand-dark/5">
           <div>
-            <h3 className="font-bold text-deepblue-900">30-Day Completion</h3>
-            <p className="text-2xl font-bold text-deepblue-900 mt-1">
+            <h3 className="text-[10px] font-black text-brand-dark/30 uppercase tracking-[0.2em] mb-2">30-Day Flow</h3>
+            <p className="text-5xl font-black text-brand-dark tracking-tighter">
               {habits.length > 0 ? Math.round((logs.filter(l => dates.includes(l.completed_at)).length / (habits.length * 30)) * 100) : 0}%
             </p>
           </div>
-          <div className="w-16 h-16 rounded-full border-4 border-emerald-500 flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-emerald-500" />
+          <div className="w-20 h-20 rounded-3xl bg-brand-primary/5 flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-brand-primary" />
           </div>
         </div>
       </div>

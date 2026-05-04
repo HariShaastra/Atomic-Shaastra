@@ -1,107 +1,90 @@
 import React from 'react';
-import { BookOpen, Zap, Target, Repeat, ArrowRight } from 'lucide-react';
+import { BookOpen, Target, Zap, ShieldAlert, CheckCircle2, Flame, UserCircle, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { shareToWhatsApp, getSharingText } from '../lib/sharing';
 
 export default function Guide() {
-  const principles = [
+  const sections = [
     {
-      title: "1st Law: Make it Obvious",
-      description: "Design your environment for success. Use implementation intentions: 'I will [BEHAVIOR] at [TIME] in [LOCATION].'",
-      icon: Zap,
-      color: "text-amber-500",
-      bg: "bg-amber-50"
-    },
-    {
-      title: "2nd Law: Make it Attractive",
-      description: "Temptation bundling: Pair an action you want to do with an action you need to do.",
       icon: Target,
-      color: "text-rose-500",
-      bg: "bg-rose-50"
+      title: "1. Identity First",
+      content: "Don't focus on what you want to achieve. Focus on who you wish to become. Every habit completed is a vote for that new person.",
+      color: "text-brand-primary"
     },
     {
-      title: "3rd Law: Make it Easy",
-      description: "The Two-Minute Rule: When you start a new habit, it should take less than two minutes to do.",
-      icon: Repeat,
-      color: "text-emerald-500",
-      bg: "bg-emerald-50"
+      icon: Zap,
+      title: "2. Small Wins",
+      content: "Atomic habits are 1% improvements. They are the compound interest of self-improvement. Just start with 2 minutes.",
+      color: "text-amber-500"
     },
     {
-      title: "4th Law: Make it Satisfying",
-      description: "The cardinal rule of behavior change: What is immediately rewarded is repeated. What is immediately punished is avoided.",
-      icon: CheckCircle,
-      color: "text-blue-500",
-      bg: "bg-blue-50"
+      icon: Flame,
+      title: "3. Systems > Goals",
+      content: "Goals are about the results you want to achieve. Systems are about the processes that lead to those results.",
+      color: "text-red-500"
     }
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 pb-20">
-      <header>
-        <h2 className="text-3xl font-bold text-deepblue-900">The Atomic Guide</h2>
-        <p className="text-deepblue-900/60 mt-2">Master the systems of behavior change based on Atomic Habits.</p>
-      </header>
+    <div className="max-w-4xl mx-auto space-y-16 pb-20 px-4">
+      <div className="text-center">
+        <h2 className="text-5xl font-black text-brand-dark tracking-tighter">The Shaastra</h2>
+        <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-4">The clinical manual for total evolution.</p>
+      </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {principles.map((p, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {sections.map((s, i) => (
           <motion.div 
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="card bg-white p-6 border-beige-200"
+            className="card bg-white p-10 border-none shadow-2xl shadow-brand-dark/5 group hover:-translate-y-2 transition-all"
           >
-            <div className={`w-12 h-12 ${p.bg} rounded-2xl flex items-center justify-center mb-4`}>
-              <p.icon className={`w-6 h-6 ${p.color}`} />
+            <div className={`p-4 rounded-2xl bg-slate-50 w-fit mb-6 group-hover:bg-brand-primary/10 transition-colors`}>
+              <s.icon className={`w-6 h-6 ${s.color}`} />
             </div>
-            <h3 className="font-bold text-lg text-deepblue-900 mb-2">{p.title}</h3>
-            <p className="text-sm text-deepblue-900/60 leading-relaxed">{p.description}</p>
+            <h3 className="font-black text-xl text-brand-dark tracking-tight mb-3">{s.title}</h3>
+            <p className="text-sm font-medium text-brand-dark/50 leading-relaxed italic">"{s.content}"</p>
           </motion.div>
         ))}
-      </section>
+      </div>
 
-      <section className="card bg-deepblue-900 text-white p-8 border-none shadow-xl shadow-deepblue-900/20">
-        <h3 className="text-xl font-bold mb-4">How to use Atomic Shaastra</h3>
-        <div className="space-y-6">
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 font-bold">1</div>
-            <div>
-              <h4 className="font-bold mb-1">Define Your Identity</h4>
-              <p className="text-sm opacity-70">Go to the 'Identity' section. Don't just track habits; decide who you want to be (e.g., 'I am a reader').</p>
-            </div>
+      <div className="card bg-brand-dark text-white p-12 border-none shadow-2xl overflow-hidden relative">
+        <div className="absolute right-[-5%] top-[-20%] w-64 h-64 bg-brand-primary opacity-20 blur-[100px] rounded-full" />
+        <div className="relative z-10 space-y-8">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-8 h-8 text-brand-accent animate-pulse" />
+            <h3 className="text-2xl font-black tracking-tight uppercase">Disclaimer & Ethics</h3>
           </div>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 font-bold">2</div>
-            <div>
-              <h4 className="font-bold mb-1">Start Small</h4>
-              <p className="text-sm opacity-70">Add habits that support your identity. Use the 'Habits' section to link them to cues and rewards.</p>
-            </div>
+          <div className="space-y-4 text-white/60 text-sm font-medium leading-relaxed">
+            <p>
+              Atomic Shaastra is a behavioral tool for self-optimization. It is not a replacement for professional psychological advice or therapy. 
+            </p>
+            <p>
+              Your data is encrypted and private. We use clinical behavioral science (CBT) principles to help you stay consistent, but your results depend entirely on your effort.
+            </p>
+            <p>
+              By using this app, you acknowledge that habit formation is a gradual process and results may vary based on individual circumstances.
+            </p>
           </div>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 font-bold">3</div>
-            <div>
-              <h4 className="font-bold mb-1">Track Daily</h4>
-              <p className="text-sm opacity-70">Use the Dashboard for today's wins and the Daily Tracker to see your 30-day momentum.</p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 font-bold">4</div>
-            <div>
-              <h4 className="font-bold mb-1">Reflect & Adjust</h4>
-              <p className="text-sm opacity-70">Use the Reflection Journal weekly to see what's working and what's not. Environment is stronger than willpower.</p>
-            </div>
-          </div>
+          <button 
+             onClick={() => shareToWhatsApp("Check out Atomic Shaastra for supercharging your productivity! 🚀")}
+             className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all font-black text-xs uppercase tracking-widest"
+          >
+            <Share2 className="w-4 h-4" /> Share with Peers
+          </button>
         </div>
-      </section>
+      </div>
 
-      <div className="text-center pt-10">
-        <p className="text-sm text-deepblue-900/40 italic">"You do not rise to the level of your goals. You fall to the level of your systems."</p>
+      <div className="text-center space-y-6">
+        <div className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.5em]">System Architecture</div>
+        <div className="flex justify-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
+           <BookOpen className="w-6 h-6" />
+           <CheckCircle2 className="w-6 h-6" />
+           <UserCircle className="w-6 h-6" />
+        </div>
       </div>
     </div>
   );
 }
-
-const CheckCircle = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);

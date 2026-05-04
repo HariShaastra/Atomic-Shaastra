@@ -6,10 +6,11 @@ interface FocusModeProps {
   habits: Habit[];
   focusTime: number;
   breakTime: number;
+  onComplete: () => void;
 }
 
-export default function FocusMode({ habits, focusTime, breakTime }: FocusModeProps) {
-  const [selectedHabit, setSelectedHabit] = useState<number | null>(null);
+export default function FocusMode({ habits, focusTime, breakTime, onComplete }: FocusModeProps) {
+  const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(focusTime * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'focus' | 'break'>('focus');
@@ -26,10 +27,10 @@ export default function FocusMode({ habits, focusTime, breakTime }: FocusModePro
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
-      alert(mode === 'focus' ? "Focus session complete! Take a break." : "Break over! Ready to focus?");
+      onComplete();
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, mode]);
+  }, [isActive, timeLeft, mode, onComplete]);
 
   const toggleTimer = () => setIsActive(!isActive);
   const resetTimer = () => {
@@ -50,63 +51,63 @@ export default function FocusMode({ habits, focusTime, breakTime }: FocusModePro
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 md:space-y-8 pb-10">
+    <div className="max-w-2xl mx-auto space-y-8 pb-32">
       <div className="text-center px-1">
-        <h2 className="text-2xl md:text-3xl font-bold text-deepblue-900">Focus Mode</h2>
-        <p className="text-sm md:text-base text-deepblue-900/60 mt-2">Eliminate distractions and focus on a single action.</p>
+        <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Focus</h2>
+        <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Single-tasking is your competitive edge.</p>
       </div>
 
-      <div className="card bg-white shadow-xl p-8 md:p-12 flex flex-col items-center space-y-6 md:space-y-8">
-        <div className="flex gap-2 md:gap-4 p-1 bg-beige-100 rounded-2xl">
+      <div className="card shadow-2xl p-12 md:p-20 flex flex-col items-center space-y-12 border-none ring-1 ring-brand-dark/5 bg-white">
+        <div className="flex gap-2 p-1.5 bg-brand-dark/5 rounded-3xl">
           <button 
             onClick={() => setTimerMode('focus')}
-            className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${mode === 'focus' ? 'bg-white shadow-sm text-deepblue-900' : 'text-deepblue-900/40'}`}
+            className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'focus' ? 'bg-white shadow-xl text-brand-dark' : 'text-brand-dark/40'}`}
           >
-            Focus ({focusTime}m)
+            Work
           </button>
           <button 
             onClick={() => setTimerMode('break')}
-            className={`px-4 md:px-6 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${mode === 'break' ? 'bg-white shadow-sm text-deepblue-900' : 'text-deepblue-900/40'}`}
+            className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'break' ? 'bg-white shadow-xl text-brand-dark' : 'text-brand-dark/40'}`}
           >
-            Short Break ({breakTime}m)
+            Rest
           </button>
         </div>
 
-        <div className="text-6xl md:text-8xl font-bold font-mono text-deepblue-900 tracking-tighter">
+        <div className="text-8xl md:text-9xl font-black text-brand-dark tracking-tighter tabular-nums">
           {formatTime(timeLeft)}
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           <button 
             onClick={toggleTimer}
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-deepblue-900 text-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-deepblue-900/20"
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-brand-primary text-white flex items-center justify-center hover:bg-brand-dark transition-all shadow-2xl shadow-brand-primary/40 group active:scale-95"
           >
-            {isActive ? <Pause className="w-5 h-5 md:w-6 md:h-6" /> : <Play className="w-5 h-5 md:w-6 md:h-6 ml-1" />}
+            {isActive ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
           </button>
           <button 
             onClick={resetTimer}
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-beige-100 text-deepblue-900 flex items-center justify-center hover:bg-beige-200 transition-colors"
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-slate-100 text-brand-dark flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
           >
-            <RotateCcw className="w-5 h-5 md:w-6 md:h-6" />
+            <RotateCcw className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="font-bold text-center text-deepblue-900/40 uppercase tracking-widest text-[10px] md:text-xs">Select a habit to focus on</h3>
+      <div className="space-y-6">
+        <h3 className="text-[10px] font-black text-center text-brand-dark/30 uppercase tracking-[0.3em]">Target System</h3>
         <div className="grid grid-cols-1 gap-3">
           {habits.map(habit => (
             <button
               key={habit.id}
               onClick={() => setSelectedHabit(habit.id)}
-              className={`p-3 md:p-4 rounded-2xl border transition-all flex items-center justify-between ${
+              className={`p-6 rounded-3xl border-2 transition-all flex items-center justify-between ${
                 selectedHabit === habit.id 
-                  ? 'bg-deepblue-900 border-deepblue-900 text-white shadow-lg' 
-                  : 'bg-white border-beige-200 hover:border-deepblue-900/20'
+                  ? 'bg-brand-dark border-brand-dark text-white shadow-2xl scale-[1.02]' 
+                  : 'bg-white border-brand-dark/5 hover:border-brand-primary/20 text-brand-dark/60'
               }`}
             >
-              <span className="font-bold text-sm md:text-base truncate mr-2">{habit.name}</span>
-              {selectedHabit === habit.id && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 shrink-0" />}
+              <span className="font-black text-lg tracking-tight truncate mr-4">{habit.name}</span>
+              {selectedHabit === habit.id && <CheckCircle2 className="w-6 h-6 text-brand-accent" />}
             </button>
           ))}
         </div>

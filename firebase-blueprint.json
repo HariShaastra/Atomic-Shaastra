@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account data and gamification status",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "focusTime": { "type": "number" },
+        "breakTime": { "type": "number" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "badges": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "email", "xp", "level"]
+    },
+    "Identity": {
+      "title": "Identity",
+      "description": "A core identity of the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "createdAt"]
+    },
+    "Habit": {
+      "title": "Habit",
+      "description": "A daily system/habit",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "identity_id": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "createdAt"]
+    },
+    "HabitLog": {
+      "title": "Habit Log",
+      "description": "A record of habit completion",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "habit_id": { "type": "string" },
+        "completed_at": { "type": "string", "format": "date" }
+      },
+      "required": ["userId", "habit_id", "completed_at"]
+    },
+    "Reflection": {
+      "title": "Reflection",
+      "description": "End-of-day journal Entry",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "easiest_habit": { "type": "string" },
+        "difficult_habit": { "type": "string" },
+        "consistency_insight": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "createdAt"]
+    },
+    "Experiment": {
+      "title": "Experiment",
+      "description": "A timed test for a new routine",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "duration_days": { "type": "number" },
+        "start_date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "start_date", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "identities/{identityId}": {
+      "schema": "Identity",
+      "description": "User identities"
+    },
+    "habits/{habitId}": {
+      "schema": "Habit",
+      "description": "User habits"
+    },
+    "logs/{logId}": {
+      "schema": "HabitLog",
+      "description": "Completion records"
+    },
+    "reflections/{reflectionId}": {
+      "schema": "Reflection",
+      "description": "User reflections"
+    },
+    "experiments/{experimentId}": {
+      "schema": "Experiment",
+      "description": "User experiments"
+    }
+  }
+}

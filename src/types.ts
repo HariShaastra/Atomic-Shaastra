@@ -1,11 +1,11 @@
 export interface Identity {
-  id: number;
+  id: string;
   name: string;
   description: string;
 }
 
 export interface Habit {
-  id: number;
+  id: string;
   name: string;
   category: string;
   daily_target: string;
@@ -13,35 +13,38 @@ export interface Habit {
   description: string;
   cue?: string;
   reward?: string;
-  identity_id?: number;
+  identity_id?: string;
   identity_name?: string;
-  stack_after_id?: number;
+  stack_after_id?: string;
   created_at: string;
 }
 
 export interface HabitLog {
-  id: number;
-  habit_id: number;
+  id: string;
+  habit_id: string;
   completed_at: string;
+  userId: string;
 }
 
 export interface Reflection {
-  id: number;
+  id: string;
   date: string;
   easiest_habit: string;
   difficult_habit: string;
   consistency_insight: string;
+  userId: string;
   created_at: string;
 }
 
 export interface Experiment {
-  id: number;
+  id: string;
   name: string;
   duration_days: number;
   start_date: string;
   end_date?: string;
   status: 'active' | 'completed';
   summary?: string;
+  userId: string;
 }
 
 export interface UserProfile {
@@ -49,4 +52,7 @@ export interface UserProfile {
   email: string;
   focusTime: number;
   breakTime: number;
+  xp: number;
+  level: number;
+  badges: string[];
 }

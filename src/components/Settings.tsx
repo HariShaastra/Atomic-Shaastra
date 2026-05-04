@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Bell, Shield, User, Timer, Info, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Shield, User, Timer, Info, Save, LogOut, Share2 } from 'lucide-react';
+import { auth } from '../lib/firebase';
 import { UserProfile } from '../types';
+import { shareToWhatsApp } from '../lib/sharing';
 
 interface SettingsProps {
   profile: UserProfile;
@@ -42,7 +44,7 @@ export default function Settings({ profile, updateProfile }: SettingsProps) {
   const sendTestNotification = () => {
     if (Notification.permission === 'granted') {
       new Notification('Atomic Shaastra', {
-        body: 'This is a test notification! Your reminders are working.',
+        body: 'Boom! Reminders are active. Ready to crush your habits?',
         icon: '/favicon.ico'
       });
     }
@@ -50,143 +52,170 @@ export default function Settings({ profile, updateProfile }: SettingsProps) {
 
   const handleSave = () => {
     updateProfile(localProfile);
-    alert('Settings saved successfully!');
+    alert('Systems refreshed successfully!');
+  };
+
+  const handleLogout = () => {
+    if (confirm("Sign out of the Shaastra? Your progress is synced and safe.")) {
+      auth.signOut();
+    }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 md:space-y-8 pb-10">
-      <div className="px-1 md:px-0 flex justify-between items-end">
+    <div className="max-w-2xl mx-auto space-y-8 md:space-y-12 pb-32">
+      <div className="px-1 md:px-0 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-deepblue-900">Settings</h2>
-          <p className="text-sm md:text-base text-deepblue-900/60">Personalize your experience.</p>
+          <h2 className="text-3xl md:text-5xl font-black text-brand-dark tracking-tight">Configuration</h2>
+          <p className="text-lg font-medium text-brand-dark/50 italic mt-2">Adjust your environment for peak performance.</p>
         </div>
         <button 
           onClick={handleSave}
-          className="btn-primary flex items-center gap-2 px-6 py-2"
+          className="btn-primary w-full sm:w-auto shadow-2xl"
         >
-          <Save className="w-4 h-4" />
-          Save Changes
+          <Save className="w-5 h-5 mr-2" />
+          Sync Changes
         </button>
       </div>
 
-      <div className="space-y-6">
-        {/* User Profile */}
-        <section className="card bg-white p-6 space-y-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-beige-50 rounded-xl">
-              <User className="w-5 h-5 text-deepblue-900" />
+      <div className="space-y-8">
+        {/* User Account */}
+        <section className="card space-y-6">
+          <div className="flex items-center justify-between group">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-brand-primary/10 rounded-2xl group-hover:rotate-12 transition-transform">
+                <User className="w-6 h-6 text-brand-primary" />
+              </div>
+              <h3 className="text-xl font-black text-brand-dark">Athlete Profile</h3>
             </div>
-            <h3 className="font-bold">User Profile</h3>
+            <button 
+              onClick={handleLogout}
+              className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <LogOut className="w-3 h-3 inline mr-1" /> Sign Out
+            </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40">Full Name</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Identity Name</label>
               <input 
                 type="text" 
                 value={localProfile.name}
                 onChange={(e) => setLocalProfile({ ...localProfile, name: e.target.value })}
-                className="w-full bg-beige-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-deepblue-900/10 outline-none"
+                className="w-full bg-brand-dark/5 border-2 border-transparent focus:border-brand-primary focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold outline-none transition-all"
                 placeholder="Enter your name"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40">Email Address</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Primary Email</label>
               <input 
                 type="email" 
                 value={localProfile.email}
                 onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })}
-                className="w-full bg-beige-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-deepblue-900/10 outline-none"
+                className="w-full bg-brand-dark/5 border-2 border-transparent focus:border-brand-primary focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold outline-none transition-all"
                 placeholder="your@email.com"
               />
             </div>
           </div>
         </section>
 
-        {/* Timer Settings */}
-        <section className="card bg-white p-6 space-y-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-beige-50 rounded-xl">
-              <Timer className="w-5 h-5 text-deepblue-900" />
+        {/* Timer Config */}
+        <section className="card space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-brand-secondary/10 rounded-2xl">
+              <Timer className="w-6 h-6 text-brand-secondary" />
             </div>
-            <h3 className="font-bold">Timer Configuration</h3>
+            <h3 className="text-xl font-black text-brand-dark">Timer System</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40">Focus Duration (min)</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Focus Flow (min)</label>
               <input 
                 type="number" 
                 value={localProfile.focusTime}
                 onChange={(e) => setLocalProfile({ ...localProfile, focusTime: parseInt(e.target.value) || 25 })}
-                className="w-full bg-beige-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-deepblue-900/10 outline-none"
+                className="w-full bg-brand-dark/5 border-2 border-transparent focus:border-brand-primary focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold outline-none transition-all"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40">Break Duration (min)</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Recovery (min)</label>
               <input 
                 type="number" 
                 value={localProfile.breakTime}
                 onChange={(e) => setLocalProfile({ ...localProfile, breakTime: parseInt(e.target.value) || 5 })}
-                className="w-full bg-beige-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-deepblue-900/10 outline-none"
+                className="w-full bg-brand-dark/5 border-2 border-transparent focus:border-brand-primary focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold outline-none transition-all"
               />
             </div>
           </div>
         </section>
 
-        {/* Notifications */}
-        <div className="card bg-white flex items-center justify-between p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-beige-50 rounded-2xl">
-              <Bell className="w-5 h-5 text-deepblue-900" />
+        {/* Notifications & Sharing */}
+        <div className="grid grid-cols-1 gap-6">
+          <div className="card flex items-center justify-between p-6">
+            <div className="flex items-center gap-5">
+              <div className="p-3 bg-brand-dark/5 rounded-2xl">
+                <Bell className="w-6 h-6 text-brand-dark" />
+              </div>
+              <div>
+                <h3 className="font-black text-lg">System Alerts</h3>
+                <p className="text-xs font-bold text-brand-dark/40 uppercase tracking-widest">Notification Engine</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold">Notifications</h3>
-              <p className="text-sm text-deepblue-900/60">Daily reminders for your habits.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {notificationsEnabled && (
-              <button 
-                onClick={sendTestNotification}
-                className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:text-indigo-500"
+            <div className="flex items-center gap-6">
+              {notificationsEnabled && (
+                <button 
+                  onClick={sendTestNotification}
+                  className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary hover:scale-110 transition-transform"
+                >
+                  Test
+                </button>
+              )}
+              <div 
+                onClick={toggleNotifications}
+                className={`w-14 h-7 rounded-full relative cursor-pointer transition-all ${notificationsEnabled ? 'bg-brand-dark' : 'bg-brand-dark/10'}`}
               >
-                Test
-              </button>
-            )}
-            <div 
-              onClick={toggleNotifications}
-              className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${notificationsEnabled ? 'bg-indigo-600' : 'bg-beige-200'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${notificationsEnabled ? 'left-7' : 'left-1'}`} />
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all ${notificationsEnabled ? 'left-8 bg-brand-accent' : 'left-1'}`} />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card bg-white flex items-center gap-4 p-6">
-          <div className="p-3 bg-beige-50 rounded-2xl">
-            <Shield className="w-5 h-5 text-deepblue-900" />
-          </div>
-          <div>
-            <h3 className="font-bold">Data Privacy</h3>
-            <p className="text-sm text-deepblue-900/60">Your data is stored locally in your browser.</p>
-          </div>
-        </div>
-
-        <div className="card bg-beige-100 border-none p-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-white rounded-2xl">
-              <Info className="w-5 h-5 text-deepblue-900" />
+          <button 
+             onClick={() => shareToWhatsApp("Check out Atomic Shaastra - the ultimate habit tracking system! Change your identity, change your life. ⚡")}
+             className="card flex items-center justify-between p-6 hover:bg-emerald-50 transition-colors group text-left"
+          >
+            <div className="flex items-center gap-5">
+              <div className="p-3 bg-emerald-100 rounded-2xl group-hover:scale-110 transition-transform">
+                <Share2 className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-lg group-hover:text-emerald-700 transition-colors">Spread the Word</h3>
+                <p className="text-xs font-bold text-brand-dark/40 uppercase tracking-widest">Share on WhatsApp</p>
+              </div>
             </div>
-            <h3 className="font-bold">About Atomic Shaastra</h3>
+            <ArrowRight className="w-5 h-5 text-brand-dark/20 group-hover:text-emerald-600 transition-all" />
+          </button>
+        </div>
+
+        <div className="card bg-brand-dark/5 border-none p-10 flex flex-col items-center text-center space-y-6">
+          <Info className="w-10 h-10 text-brand-dark/10" />
+          <div className="space-y-4">
+            <h3 className="font-black text-xl">The Shaastra Philosophy</h3>
+            <p className="text-sm text-brand-dark/60 font-bold leading-relaxed max-w-sm">
+              Atomic Shaastra is built on the belief that environment is stronger than willpower. 
+              Levels, XP, and streaks are tools to bridge the gap between effort and reward.
+            </p>
           </div>
-          <p className="text-sm text-deepblue-900/70 leading-relaxed">
-            Atomic Shaastra is built on the philosophy that small, consistent actions lead to remarkable results. 
-            By focusing on identity-based habits and designing your environment for success, you can achieve long-term personal growth.
-          </p>
-          <div className="mt-6 pt-6 border-t border-white/40 text-[10px] font-bold text-deepblue-900/40 uppercase tracking-widest">
-            Version 1.1.0 • Inspired by James Clear
+          <div className="pt-6 border-t border-brand-dark/5 w-full flex justify-between items-center text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.3em]">
+            <span>Version 2.0.0</span>
+            <span>Est. 2024</span>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+const ArrowRight = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+  </svg>
+);

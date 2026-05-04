@@ -14,9 +14,29 @@ import {
   Calendar,
   Zap,
   Menu,
-  X
+  Info,
+  X,
+  LogOut,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  setDoc, 
+  doc, 
+  onSnapshot,
+  deleteDoc,
+  updateDoc,
+  serverTimestamp,
+  orderBy,
+  limit
+} from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, db, loginWithGoogle, logout } from './lib/firebase';
 import { Habit, HabitLog, Identity, Reflection, Experiment, UserProfile } from './types';
 
 // Components
@@ -30,135 +50,247 @@ import FocusMode from './components/FocusMode';
 import Settings from './components/Settings';
 import DailyTracker from './components/DailyTracker';
 import Guide from './components/Guide';
+import Logo from './components/Logo';
+import Mascot from './components/Mascot';
 
 type Section = 'dashboard' | 'habits' | 'tracker' | 'streaks' | 'reflection' | 'identity' | 'experiments' | 'stats' | 'focus' | 'settings' | 'guide';
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [identities, setIdentities] = useState<Identity[]>([]);
+  const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [reflections, setReflections] = useState<Reflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mascotMessage, setMascotMessage] = useState<string | undefined>("Systems active. Ready for precision?");
   
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('userProfile');
-    return saved ? JSON.parse(saved) : { name: '', email: '', focusTime: 25, breakTime: 5 };
+  const [userProfile, setUserProfile] = useState<UserProfile>({ 
+    name: '', 
+    email: '', 
+    focusTime: 25, 
+    breakTime: 5,
+    xp: 0,
+    level: 1,
+    badges: []
   });
 
-  const updateProfile = (newProfile: UserProfile) => {
-    setUserProfile(newProfile);
-    localStorage.setItem('userProfile', JSON.stringify(newProfile));
-  };
-
-  // Notification Logic
+  // Auth Listener
   useEffect(() => {
-    const checkNotifications = () => {
-      const enabled = localStorage.getItem('notificationsEnabled') === 'true';
-      if (!enabled || Notification.permission !== 'granted') return;
-
-      const today = new Date().toISOString().split('T')[0];
-      const todayLogs = logs.filter(l => l.completed_at === today);
-      const pendingCount = habits.length - todayLogs.length;
-
-      if (pendingCount > 0) {
-        new Notification('Atomic Shaastra Reminder', {
-          body: `You have ${pendingCount} habits left to complete today. Keep up the momentum!`,
-          icon: '/favicon.ico'
-        });
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setLoading(false);
       }
-    };
-
-    // Check once on load after data is fetched
-    if (!loading && habits.length > 0) {
-      const lastCheck = localStorage.getItem('lastNotificationCheck');
-      const today = new Date().toISOString().split('T')[0];
-      
-      if (lastCheck !== today) {
-        checkNotifications();
-        localStorage.setItem('lastNotificationCheck', today);
-      }
-    }
-  }, [loading, habits, logs]);
-
-  const fetchData = async () => {
-    try {
-      const [habitsRes, logsRes, identitiesRes] = await Promise.all([
-        fetch('/api/habits'),
-        fetch('/api/habit-logs'),
-        fetch('/api/identities')
-      ]);
-      
-      const habitsData = await habitsRes.json();
-      const logsData = await logsRes.json();
-      const identitiesData = await identitiesRes.json();
-
-      setHabits(habitsData);
-      setLogs(logsData);
-      setIdentities(identitiesData);
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    });
+    return () => unsubscribe();
   }, []);
 
-  const toggleHabit = async (habitId: number, date?: string) => {
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    try {
-      const res = await fetch('/api/habit-logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ habit_id: habitId, completed_at: targetDate })
-      });
-      const result = await res.json();
-      
-      if (result.status === 'added') {
-        setLogs([...logs, { id: result.id, habit_id: habitId, completed_at: targetDate }]);
+  // Data Syncing
+  useEffect(() => {
+    if (!user) return;
+
+    setLoading(true);
+
+    // Profile sync
+    const profileUnsub = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setUserProfile(docSnap.data() as UserProfile);
       } else {
-        setLogs(logs.filter(l => !(l.habit_id === habitId && l.completed_at === targetDate)));
+        // Init profile
+        const initialProfile: UserProfile = {
+          name: user.displayName || '',
+          email: user.email || '',
+          focusTime: 25,
+          breakTime: 5,
+          xp: 0,
+          level: 1,
+          badges: []
+        };
+        setDoc(doc(db, 'users', user.uid), initialProfile);
+      }
+    });
+
+    // Habits sync
+    const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid));
+    const habitsUnsub = onSnapshot(habitsQuery, (snap) => {
+      setHabits(snap.docs.map(d => ({ id: d.id, ...d.data() } as Habit)));
+    });
+
+    // Logs sync (last 30 days)
+    const logsQuery = query(collection(db, 'logs'), where('userId', '==', user.uid));
+    const logsUnsub = onSnapshot(logsQuery, (snap) => {
+      setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as HabitLog)));
+    });
+
+    // Identities sync
+    const identitiesQuery = query(collection(db, 'identities'), where('userId', '==', user.uid));
+    const identitiesUnsub = onSnapshot(identitiesQuery, (snap) => {
+      setIdentities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Identity)));
+    });
+
+    // Experiments sync
+    const experimentsQuery = query(collection(db, 'experiments'), where('userId', '==', user.uid));
+    const experimentsUnsub = onSnapshot(experimentsQuery, (snap) => {
+      setExperiments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Experiment)));
+    });
+
+    // Reflections sync
+    const reflectionsQuery = query(collection(db, 'reflections'), where('userId', '==', user.uid));
+    const reflectionsUnsub = onSnapshot(reflectionsQuery, (snap) => {
+      setReflections(snap.docs.map(d => ({ id: d.id, ...d.data() } as Reflection)));
+    });
+
+    setLoading(false);
+
+    return () => {
+      profileUnsub();
+      habitsUnsub();
+      logsUnsub();
+      identitiesUnsub();
+      experimentsUnsub();
+      reflectionsUnsub();
+    };
+  }, [user]);
+
+  const updateProfile = async (newProfile: UserProfile) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { ...newProfile });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const addXP = async (amount: number) => {
+    if (!user) return;
+    const newXP = userProfile.xp + amount;
+    const nextLevelXP = userProfile.level * 100;
+    
+    if (newXP >= nextLevelXP) {
+      const newLevel = userProfile.level + 1;
+      setMascotMessage(`Incredible! You just reached Level ${newLevel}!`);
+      await updateProfile({ ...userProfile, xp: newXP - nextLevelXP, level: newLevel });
+    } else {
+      await updateProfile({ ...userProfile, xp: newXP });
+    }
+  };
+
+  const toggleHabit = async (habitId: string, date?: string) => {
+    if (!user) return;
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const existingLog = logs.find(l => l.habit_id === habitId && l.completed_at === targetDate);
+
+    try {
+      if (existingLog) {
+        await deleteDoc(doc(db, 'logs', existingLog.id as string));
+      } else {
+        const xpAmount = 10 * userProfile.level;
+        addXP(xpAmount);
+        setMascotMessage(`Great job! +${xpAmount} XP earned.`);
+        await addDoc(collection(db, 'logs'), {
+          userId: user.uid,
+          habit_id: habitId,
+          completed_at: targetDate,
+          createdAt: new Date().toISOString()
+        });
       }
     } catch (error) {
       console.error("Failed to toggle habit", error);
     }
   };
 
+  useEffect(() => {
+    const messages = [
+      "Systems are the architecture of identity. Keep building.",
+      "Consistency is the secret to greatness!",
+      "Small steps lead to big destinations.",
+      "Every habit complete is a vote for your new self.",
+      "The lab is open. What's your next experiment?",
+      "XP increases as you master your environment.",
+      "Efficiency is high today. Stay focused.",
+      "Remember: Identity follows action, not the other way around.",
+      "You are becoming the person you want to be.",
+      "Systems > Goals. Trust the process."
+    ];
+    
+    const interval = setInterval(() => {
+      if (Math.random() > 0.5) { // Only show messages sometimes
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        setMascotMessage(msg);
+        setTimeout(() => setMascotMessage(undefined), 8000);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tracker', label: 'Daily Tracker', icon: Calendar },
-    { id: 'habits', label: 'Habits', icon: CheckCircle2 },
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+    { id: 'focus', label: 'Focus', icon: Timer },
+    { id: 'habits', label: 'Systems', icon: Zap },
     { id: 'identity', label: 'Identity', icon: UserCircle },
-    { id: 'reflection', label: 'Reflection', icon: BookOpen },
-    { id: 'experiments', label: 'Experiments', icon: FlaskConical },
-    { id: 'stats', label: 'Statistics', icon: BarChart3 },
-    { id: 'focus', label: 'Focus Mode', icon: Timer },
-    { id: 'guide', label: 'Atomic Guide', icon: BookOpen },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon },
+    { id: 'tracker', label: 'History', icon: Calendar },
+    { id: 'stats', label: 'Insights', icon: BarChart3 },
+    { id: 'reflection', label: 'Log', icon: BookOpen },
+    { id: 'experiments', label: 'Lab', icon: FlaskConical },
+    { id: 'guide', label: 'Guide', icon: Info },
+    { id: 'settings', label: 'Config', icon: SettingsIcon },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-beige-50">
-        <div className="text-deepblue-900 animate-pulse font-medium">Atomic Shaastra...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-6">
+          <Logo className="scale-150 mb-12" />
+          <div className="text-brand-dark/20 animate-pulse font-black uppercase tracking-[0.5em] text-xs">Initialising Shaastra...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-slate-50 to-brand-primary/5">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full space-y-12 text-center"
+        >
+          <Logo className="scale-125 mx-auto" />
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black text-brand-dark tracking-tighter">Enter the Shaastra</h1>
+            <p className="text-brand-dark/40 font-medium leading-relaxed">
+              Automate your evolution. Build clinical systems and transform your identity. 
+            </p>
+          </div>
+          
+          <div className="p-8 bg-white rounded-[3rem] shadow-2xl shadow-brand-dark/10 border border-brand-dark/5 space-y-6">
+            <button 
+              onClick={loginWithGoogle}
+              className="w-full bg-brand-dark text-white p-5 rounded-2xl font-black flex items-center justify-center gap-4 hover:bg-brand-primary transition-all shadow-xl shadow-brand-dark/20 group"
+            >
+              <Mail className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              Sign in with Google
+            </button>
+            <p className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.2em]">
+              Encrypted • Professional • Secure
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   const SidebarContent = () => (
     <>
-      <div className="p-8">
-        <h1 className="text-xl font-bold tracking-tight text-deepblue-900 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-          Atomic Shaastra
-        </h1>
-        <p className="text-xs text-deepblue-900/50 mt-1 uppercase tracking-widest font-semibold">Self-Improvement</p>
+      <div className="p-8 pb-12">
+        <Logo />
       </div>
 
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -166,92 +298,63 @@ export default function App() {
               setActiveSection(item.id as Section);
               setIsMobileMenuOpen(false);
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`w-full flex items-center gap-3 px-5 py-4 rounded-3xl text-sm font-black transition-all ${
               activeSection === item.id 
-                ? 'bg-deepblue-900 text-white shadow-lg shadow-deepblue-900/20' 
-                : 'text-deepblue-900/60 hover:bg-beige-100 hover:text-deepblue-900'
+                ? 'bg-brand-dark text-white shadow-2xl shadow-brand-dark/20 scale-[1.02]' 
+                : 'text-brand-dark/40 hover:bg-brand-dark/5 hover:text-brand-dark/80'
             }`}
           >
-            <item.icon className="w-4 h-4" />
+            <div className={`p-2 rounded-xl transition-colors ${activeSection === item.id ? 'bg-brand-primary' : 'bg-brand-dark/5'}`}>
+              <item.icon className={`w-4 h-4 ${activeSection === item.id ? 'text-white' : 'text-brand-dark/40'}`} />
+            </div>
             {item.label}
           </button>
         ))}
       </nav>
 
-      <div className="p-6 border-t border-beige-200">
-        <div className="bg-beige-100 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Flame className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-bold text-deepblue-900">Daily Streak</span>
+      <div className="p-8 space-y-4">
+        <div className="bg-slate-50 border-2 border-brand-dark/5 rounded-[2.5rem] p-6 space-y-4 shadow-xl shadow-brand-dark/[0.02] relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-16 h-16 bg-brand-primary/5 rounded-full blur-xl group-hover:scale-150 transition-transform" />
+          <div className="flex justify-between items-center relative">
+            <div>
+              <span className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.2em] block mb-1">Rank</span>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-brand-primary fill-brand-primary" />
+                <span className="text-xl font-black text-brand-dark tracking-tighter">LVL {userProfile.level}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.2em] block mb-1">Status</span>
+              <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">{userProfile.xp} / {userProfile.level * 100}</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-deepblue-900">5 Days</div>
+          <div className="xp-bar-container h-3 bg-white border border-brand-dark/5">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${(userProfile.xp / (userProfile.level * 100)) * 100}%` }}
+              className="xp-bar-fill shadow-lg shadow-brand-primary/20" 
+            />
+          </div>
         </div>
+        
+        <button 
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-brand-dark/40 hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-100"
+        >
+          <LogOut className="w-3 h-3" /> Terminate Session
+        </button>
       </div>
     </>
   );
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-beige-50">
-      {/* Welcome Modal */}
-      <AnimatePresence>
-        {!userProfile.name && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-deepblue-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6"
-            >
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-8 h-8 text-amber-500 fill-amber-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-deepblue-900">Welcome to Atomic Shaastra</h2>
-                <p className="text-deepblue-900/60">Let's personalize your journey to a better identity.</p>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-deepblue-900/40">Your Name</label>
-                  <input 
-                    type="text" 
-                    className="w-full bg-beige-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-deepblue-900/10 outline-none"
-                    placeholder="e.g. James Clear"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const val = (e.target as HTMLInputElement).value;
-                        if (val) updateProfile({ ...userProfile, name: val });
-                      }
-                    }}
-                  />
-                </div>
-                <button 
-                  onClick={(e) => {
-                    const input = (e.currentTarget.previousSibling?.lastChild as HTMLInputElement);
-                    if (input.value) updateProfile({ ...userProfile, name: input.value });
-                  }}
-                  className="w-full btn-primary py-3 rounded-xl font-bold"
-                >
-                  Start My Journey
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50">
       {/* Mobile Header */}
-      <header className="lg:hidden bg-white border-b border-beige-200 p-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-          <span className="font-bold text-deepblue-900">Atomic Shaastra</span>
-        </div>
+      <header className="lg:hidden bg-white border-b border-brand-dark/5 p-4 flex items-center justify-between sticky top-0 z-50">
+        <Logo className="scale-75 origin-left" />
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-deepblue-900 hover:bg-beige-100 rounded-lg"
+          className="p-3 bg-brand-dark/5 text-brand-dark rounded-2xl transition-colors active:scale-90"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -266,14 +369,14 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-brand-dark/40 backdrop-blur-md z-40 lg:hidden"
             />
             <motion.aside 
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 bg-white z-50 lg:hidden flex flex-col shadow-2xl"
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 w-80 bg-white z-50 lg:hidden flex flex-col shadow-2xl"
             >
               <SidebarContent />
             </motion.aside>
@@ -282,19 +385,19 @@ export default function App() {
       </AnimatePresence>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-beige-200 flex flex-col sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-80 bg-white border-r border-brand-dark/5 flex-col sticky top-0 h-screen shadow-2xl shadow-brand-dark/[0.02]">
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-16 overflow-y-auto custom-scrollbar">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSection}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, scale: 0.98, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.02, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
             className="max-w-6xl mx-auto"
           >
             {activeSection === 'dashboard' && (
@@ -310,7 +413,6 @@ export default function App() {
               <HabitList 
                 habits={habits} 
                 identities={identities} 
-                refresh={fetchData} 
               />
             )}
             {activeSection === 'tracker' && (
@@ -324,23 +426,23 @@ export default function App() {
               <IdentityBuilder 
                 identities={identities} 
                 habits={habits}
-                refresh={fetchData} 
               />
             )}
             {activeSection === 'reflection' && (
-              <ReflectionJournal refresh={fetchData} />
+              <ReflectionJournal habits={habits} reflections={reflections} />
             )}
             {activeSection === 'experiments' && (
-              <HabitExperiments refresh={fetchData} />
+              <HabitExperiments experiments={experiments} />
             )}
             {activeSection === 'stats' && (
-              <Statistics habits={habits} logs={logs} />
+              <Statistics habits={habits} logs={logs} identities={identities} />
             )}
             {activeSection === 'focus' && (
               <FocusMode 
                 habits={habits} 
                 focusTime={userProfile.focusTime}
                 breakTime={userProfile.breakTime}
+                onComplete={() => addXP(20 * userProfile.level)}
               />
             )}
             {activeSection === 'settings' && (
@@ -356,31 +458,11 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Mobile Bottom Nav (Optional, but good for UX) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-beige-200 px-2 py-1 flex justify-around items-center z-40">
-        {navItems.slice(0, 4).map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveSection(item.id as Section)}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-              activeSection === item.id ? 'text-deepblue-900' : 'text-deepblue-900/40'
-            }`}
-          >
-            <item.icon className="w-5 h-5" />
-            <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label.split(' ')[0]}</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 text-deepblue-900/40"
-        >
-          <Menu className="w-5 h-5" />
-          <span className="text-[10px] font-bold uppercase tracking-tighter">More</span>
-        </button>
-      </nav>
+      <Mascot message={mascotMessage} />
       
-      {/* Add padding to main content on mobile to account for bottom nav */}
-      <div className="lg:hidden h-16" />
+      {/* Footer / Mobile Nav space */}
+      <div className="lg:hidden h-24" />
     </div>
   );
 }
+

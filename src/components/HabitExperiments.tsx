@@ -48,14 +48,14 @@ export default function HabitExperiments({ experiments }: HabitExperimentsProps)
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-1 md:px-0">
         <div>
-          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Lab</h2>
-          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Scientific testing for your life systems.</p>
+          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Challenges</h2>
+          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Try a new routine for a few weeks.</p>
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
           className="btn-primary"
         >
-          <Plus className="w-5 h-5" /> Start Test
+          <Plus className="w-5 h-5" /> Start Challenge
         </button>
       </div>
 
@@ -63,11 +63,11 @@ export default function HabitExperiments({ experiments }: HabitExperimentsProps)
         <div className="card shadow-2xl p-8 border-none ring-1 ring-brand-dark/5 bg-white">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Hypothesis Name</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/30 ml-1">Challenge Name</label>
               <input 
                 required
                 type="text" 
-                placeholder="e.g., No caffeine after 2 PM"
+                placeholder="e.g., Drink water before every meal"
                 className="w-full p-4 bg-brand-dark/5 rounded-2xl border-2 border-transparent focus:border-brand-primary focus:bg-white outline-none transition-all font-bold"
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
@@ -97,7 +97,7 @@ export default function HabitExperiments({ experiments }: HabitExperimentsProps)
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
-              <button type="submit" className="btn-primary">Initiate</button>
+              <button type="submit" className="btn-primary">Start Now</button>
             </div>
           </form>
         </div>
@@ -137,7 +137,7 @@ export default function HabitExperiments({ experiments }: HabitExperimentsProps)
             <div className="space-y-6 relative z-10">
               <div className="flex justify-between text-[10px] font-black text-brand-dark/30 uppercase tracking-widest">
                 <span>Phase</span>
-                <span className="text-brand-secondary font-black">Data Collection</span>
+                <span className="text-brand-secondary font-black">Active Challenge</span>
               </div>
               <div className="xp-bar-container bg-slate-100">
                 <div className="xp-bar-fill w-1/4 bg-brand-primary shadow-lg shadow-brand-primary/20" />
@@ -150,7 +150,7 @@ export default function HabitExperiments({ experiments }: HabitExperimentsProps)
         ))}
         {experiments.length === 0 && (
           <div className="col-span-full py-20 text-center space-y-4">
-            <h3 className="text-xl font-black text-brand-dark/20 tracking-tight uppercase tracking-widest">No Active Trials</h3>
+            <h3 className="text-xl font-black text-brand-dark/20 tracking-tight uppercase tracking-widest">No active challenges. Start one?</h3>
           </div>
         )}
       </div>

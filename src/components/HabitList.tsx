@@ -64,8 +64,8 @@ export default function HabitList({ habits, identities }: HabitListProps) {
     <div className="max-w-5xl mx-auto space-y-6 md:space-y-12 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-1 md:px-0">
         <div>
-          <h2 className="text-3xl md:text-5xl font-black text-brand-dark tracking-tighter">System Design</h2>
-          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Precision biological programming.</p>
+          <h2 className="text-3xl md:text-5xl font-black text-brand-dark tracking-tighter">My Habits</h2>
+          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Design your daily routines.</p>
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -152,11 +152,11 @@ export default function HabitList({ habits, identities }: HabitListProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 p-6 bg-brand-dark/5 rounded-3xl border border-brand-dark/5">
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/40 flex items-center gap-2 ml-1">
-                  <Target className="w-3 h-3 text-brand-primary" /> System Cue
+                  <Target className="w-3 h-3 text-brand-primary" /> What reminds you? (Cue)
                 </label>
                 <input 
                   type="text" 
-                  placeholder="When I open my laptop..."
+                  placeholder="e.g. After I wake up..."
                   className="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-brand-primary outline-none transition-all font-bold"
                   value={formData.cue}
                   onChange={e => setFormData({...formData, cue: e.target.value})}
@@ -164,11 +164,11 @@ export default function HabitList({ habits, identities }: HabitListProps) {
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-brand-dark/40 flex items-center gap-2 ml-1">
-                  <Sparkles className="w-3 h-3 text-brand-secondary" /> System Reward
+                  <Sparkles className="w-3 h-3 text-brand-secondary" /> How will you celebrate? (Reward)
                 </label>
                 <input 
                   type="text" 
-                  placeholder="A fresh cup of tea"
+                  placeholder="e.g. Enjoy a coffee"
                   className="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-brand-primary outline-none transition-all font-bold"
                   value={formData.reward}
                   onChange={e => setFormData({...formData, reward: e.target.value})}
@@ -224,7 +224,7 @@ export default function HabitList({ habits, identities }: HabitListProps) {
                   <div className="p-1 px-1.5 bg-brand-accent/20 rounded-lg shrink-0 mt-0.4">
                     <Zap className="w-3 h-3 text-brand-accent fill-white" /> 
                   </div>
-                  <span className="leading-relaxed font-bold tracking-tight"><span className="text-brand-dark/30 font-black uppercase text-[9px] block">CUE</span> {habit.cue}</span>
+                  <span className="leading-relaxed font-bold tracking-tight"><span className="text-brand-dark/30 font-black uppercase text-[9px] block text-brand-primary">Remind me:</span> {habit.cue}</span>
                 </div>
               )}
               {habit.reward && (
@@ -232,7 +232,7 @@ export default function HabitList({ habits, identities }: HabitListProps) {
                   <div className="p-1 px-1.5 bg-brand-secondary/20 rounded-lg shrink-0 mt-0.4">
                     <Sparkles className="w-3 h-3 text-brand-secondary fill-white" />
                   </div>
-                  <span className="leading-relaxed font-bold tracking-tight"><span className="text-brand-dark/30 font-black uppercase text-[9px] block">REWARD</span> {habit.reward}</span>
+                  <span className="leading-relaxed font-bold tracking-tight"><span className="text-brand-dark/30 font-black uppercase text-[9px] block text-brand-secondary">Reward:</span> {habit.reward}</span>
                 </div>
               )}
               {habit.identity_id && (

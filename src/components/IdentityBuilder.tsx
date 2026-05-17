@@ -47,8 +47,8 @@ export default function IdentityBuilder({ identities, habits }: IdentityBuilderP
     <div className="max-w-5xl mx-auto space-y-12 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-1 md:px-0">
         <div>
-          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Identity</h2>
-          <p className="text-brand-dark/40 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Focus on who you are becoming.</p>
+          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">The Best Me</h2>
+          <p className="text-brand-dark/40 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Define who you want to be, then prove it with habits.</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <button 
@@ -61,7 +61,7 @@ export default function IdentityBuilder({ identities, habits }: IdentityBuilderP
             onClick={() => setShowForm(!showForm)}
             className="btn-primary flex-1 sm:flex-none justify-center"
           >
-            <Plus className="w-5 h-5" /> New Identity
+            <Plus className="w-5 h-5" /> Add Identity
           </button>
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function IdentityBuilder({ identities, habits }: IdentityBuilderP
                   </div>
                   <div>
                     <h3 className="font-black text-2xl tracking-tight text-brand-dark">{identity.name}</h3>
-                    <p className="text-[10px] text-brand-dark/30 uppercase tracking-[0.3em] font-black">Identity Anchor</p>
+                    <p className="text-[10px] text-brand-dark/30 uppercase tracking-[0.3em] font-black">Who I am</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -134,12 +134,12 @@ export default function IdentityBuilder({ identities, habits }: IdentityBuilderP
               
               <div className="space-y-4 pt-6 border-t border-brand-dark/5 relative z-10">
                 <div className="flex justify-between items-center text-[10px] font-black text-brand-dark/30 uppercase tracking-widest">
-                  <span>Systems Built</span>
-                  <span>{identityHabits.length} Evidences</span>
+                  <span>Active Habits</span>
+                  <span>{identityHabits.length} Small Wins</span>
                 </div>
                 <div className="space-y-2">
                   {identityHabits.length === 0 ? (
-                    <div className="text-[10px] font-bold text-brand-dark/20 uppercase tracking-widest italic">No systems active</div>
+                    <div className="text-[10px] font-bold text-brand-dark/20 uppercase tracking-widest italic">No habits linked yet</div>
                   ) : (
                     identityHabits.map(h => (
                       <div key={h.id} className="flex items-center gap-3 text-xs font-bold text-brand-dark/80">

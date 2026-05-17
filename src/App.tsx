@@ -204,25 +204,24 @@ export default function App() {
 
   useEffect(() => {
     const messages = [
-      "Systems are the architecture of identity. Keep building.",
-      "Consistency is the secret to greatness!",
-      "Small steps lead to big destinations.",
-      "Every habit complete is a vote for your new self.",
-      "The lab is open. What's your next experiment?",
-      "XP increases as you master your environment.",
-      "Efficiency is high today. Stay focused.",
-      "Remember: Identity follows action, not the other way around.",
-      "You are becoming the person you want to be.",
-      "Systems > Goals. Trust the process."
+      "Tip: Click a habit on your dashboard to mark it as done!",
+      "Tip: Try adding an 'Identity' first. It's who you want to be.",
+      "Tip: Keep your first habits very small. Even 2 minutes counts!",
+      "Consistency is about showing up. Even on your bad days.",
+      "You're doing great! Small steps lead to big change.",
+      "Check your 'Progress' tab to see your weekly wins.",
+      "Need to focus? Try the 'Focus Now' button at the top.",
+      "Remember: Identity follows action. You are what you repeatedly do.",
+      "Every checkmark is a vote for your future self."
     ];
     
     const interval = setInterval(() => {
-      if (Math.random() > 0.5) { // Only show messages sometimes
+      if (Math.random() > 0.3) { // Show more frequently for guidance
         const msg = messages[Math.floor(Math.random() * messages.length)];
         setMascotMessage(msg);
-        setTimeout(() => setMascotMessage(undefined), 8000);
+        setTimeout(() => setMascotMessage(undefined), 10000);
       }
-    }, 60000); // Check every minute
+    }, 45000); // Check every 45 seconds
     
     return () => clearInterval(interval);
   }, []);

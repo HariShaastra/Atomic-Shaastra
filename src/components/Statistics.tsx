@@ -31,8 +31,8 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
     <div className="max-w-5xl mx-auto space-y-12 pb-20">
       <div className="flex justify-between items-start px-1 md:px-0">
         <div>
-          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Insights</h2>
-          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">Metrical analysis of your behavioral systems.</p>
+          <h2 className="text-4xl font-black text-brand-dark tracking-tighter">Progress</h2>
+          <p className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.4em] mt-3">See how your habits are growing.</p>
         </div>
         <button 
           onClick={() => shareToWhatsApp(getSharingText('stats', { name: "my audit" }))}
@@ -45,28 +45,28 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card bg-white p-8 border-none shadow-2xl shadow-brand-dark/5">
           <div className="flex items-center gap-2 text-[10px] font-black text-brand-dark/30 uppercase tracking-widest mb-4">
-            <CheckCircle2 className="w-4 h-4 text-brand-primary" /> Volume
+            <CheckCircle2 className="w-4 h-4 text-brand-primary" /> Success
           </div>
           <div className="text-5xl font-black text-brand-dark tracking-tighter">{totalCompletions}</div>
-          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Total Repetitions</div>
+          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Total Completions</div>
         </div>
         <div className="card bg-white p-8 border-none shadow-2xl shadow-brand-dark/5">
           <div className="flex items-center gap-2 text-[10px] font-black text-brand-dark/30 uppercase tracking-widest mb-4">
-            <Zap className="w-4 h-4 text-brand-secondary" /> Scope
+            <Zap className="w-4 h-4 text-brand-secondary" /> Count
           </div>
           <div className="text-5xl font-black text-brand-dark tracking-tighter">{habitCount}</div>
-          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Active Systems</div>
+          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Active Habits</div>
         </div>
         <div className="card bg-white p-8 border-none shadow-2xl shadow-brand-dark/5">
           <div className="flex items-center gap-2 text-[10px] font-black text-brand-dark/30 uppercase tracking-widest mb-4">
             <Target className="w-4 h-4 text-brand-accent" /> Roots
           </div>
           <div className="text-5xl font-black text-brand-dark tracking-tighter">{identities.length}</div>
-          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Identity Anchors</div>
+          <div className="text-[9px] text-brand-dark/20 mt-1 font-bold uppercase tracking-widest">Identities</div>
         </div>
         <div className="card bg-brand-dark text-white p-8 border-none shadow-2xl">
           <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">
-            <Calendar className="w-4 h-4 text-brand-primary" /> Efficiency
+            <Calendar className="w-4 h-4 text-brand-primary" /> Success Rate
           </div>
           <div className="text-5xl font-black text-white tracking-tighter">
             {habitCount > 0 ? Math.round((totalCompletions / (habitCount * 30)) * 100) : 0}%
@@ -79,7 +79,7 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
         <div className="lg:col-span-2 space-y-6">
           <div className="card bg-white p-12 border-none shadow-2xl shadow-brand-dark/5 ring-1 ring-brand-dark/5">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark/30 mb-8 flex items-center gap-3">
-              <BarChart3 className="w-5 h-5" /> Velocity (7D)
+              <BarChart3 className="w-5 h-5" /> Weekly Progress (7D)
             </h3>
             <div className="flex items-end justify-between h-48 gap-4 overflow-x-auto pb-4">
               {dailyStats.map(stat => (
@@ -99,7 +99,7 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
 
         <div className="space-y-6">
           <div className="card bg-slate-50 border-none p-10">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark/30 mb-8">System Stability</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark/30 mb-8">Consistency</h3>
             <div className="space-y-8">
               {habits.map(habit => {
                 const habitLogs = logs.filter(l => l.habit_id === habit.id).length;
@@ -108,7 +108,7 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
                   <div key={habit.id} className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="font-black text-sm tracking-tight text-brand-dark truncate pr-4">{habit.name}</span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-brand-dark/30 shrink-0">{habitLogs} Units</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-brand-dark/30 shrink-0">{habitLogs} Days</span>
                     </div>
                     <div className="xp-bar-container h-2 bg-white">
                       <div 
@@ -121,7 +121,7 @@ export default function Statistics({ habits, logs, identities }: StatisticsProps
               })}
               {habits.length === 0 && (
                 <div className="text-center py-10 text-[9px] font-black text-brand-dark/20 uppercase tracking-widest italic">
-                  No data streams active
+                  Start a habit to see your progress!
                 </div>
               )}
             </div>

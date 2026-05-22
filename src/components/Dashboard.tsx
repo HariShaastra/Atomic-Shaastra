@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Habit, HabitLog } from '../types';
+import NotificationsCenter from './NotificationsCenter';
 
 import { shareToWhatsApp, getSharingText } from '../lib/sharing';
 
@@ -22,9 +23,19 @@ interface DashboardProps {
   userName?: string;
   level?: number;
   xp?: number;
+  triggerGlobalBanner: (config: any) => void;
 }
 
-export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userName, level, xp }: DashboardProps) {
+export default function Dashboard({ 
+  habits, 
+  logs, 
+  toggleHabit, 
+  onNavigate, 
+  userName, 
+  level, 
+  xp, 
+  triggerGlobalBanner 
+}: DashboardProps) {
   const today = new Date().toISOString().split('T')[0];
   const todayLogs = logs.filter(l => l.completed_at === today);
   
@@ -294,6 +305,16 @@ export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userN
               </div>
             </div>
           </div>
+
+          {/* Active Notifications & Controls Section */}
+          <section className="pt-4">
+            <NotificationsCenter 
+              habits={habits} 
+              logs={logs} 
+              toggleHabit={toggleHabit} 
+              triggerGlobalBanner={triggerGlobalBanner}
+            />
+          </section>
         </>
       )}
     </div>

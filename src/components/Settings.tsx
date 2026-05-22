@@ -65,7 +65,7 @@ export default function Settings({ profile, updateProfile }: SettingsProps) {
     <div className="max-w-2xl mx-auto space-y-8 md:space-y-12 pb-32">
       <div className="px-1 md:px-0 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
-          <h2 className="text-3xl md:text-5xl font-black text-brand-dark tracking-tight">Configuration</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-brand-dark tracking-tight">Settings</h2>
           <p className="text-lg font-medium text-brand-dark/50 italic mt-2">Adjust your environment for peak performance.</p>
         </div>
         <button 

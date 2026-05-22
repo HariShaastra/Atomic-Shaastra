@@ -51,8 +51,21 @@ import Settings from './components/Settings';
 import DailyTracker from './components/DailyTracker';
 import Guide from './components/Guide';
 import Logo from './components/Logo';
+import { playCalmChime } from './components/NotificationsCenter';
 
 type Section = 'dashboard' | 'habits' | 'tracker' | 'streaks' | 'reflection' | 'identity' | 'experiments' | 'stats' | 'focus' | 'settings' | 'guide';
+
+interface ActiveBanner {
+  id: string;
+  title: string;
+  body: string;
+  habitName: string;
+  habitId: string;
+  category: string;
+  cue?: string;
+  reward?: string;
+  identity?: string;
+}
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -65,6 +78,105 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mascotMessage, setMascotMessage] = useState<string | undefined>("Systems active. Ready for precision?");
+  const [activeBanners, setActiveBanners] = useState<ActiveBanner[]>([]);
+  const triggeredRef = React.useRef<Record<string, boolean>>({});
+
+  const triggerGlobalBanner = (banner: ActiveBanner) => {
+    setActiveBanners(prev => {
+      // Avoid duplicate banner with same id
+      if (prev.some(b => b.id === banner.id)) return prev;
+      return [banner, ...prev].slice(0, 3);
+    });
+  };
+
+  // Schedule Reminder Scanner Tick Loop
+  useEffect(() => {
+    if (!user || habits.length === 0) return;
+
+    const checkReminders = () => {
+      const now = new Date();
+      const HH = String(now.getHours()).padStart(2, '0');
+      const MM = String(now.getMinutes()).padStart(2, '0');
+      const currentTimeStr = `${HH}:${MM}`;
+      const todayDateStr = now.toISOString().split('T')[0];
+
+      habits.forEach(habit => {
+        let config = {
+          enabled: true,
+          time: '08:00',
+          style: 'cue'
+        };
+        const saved = localStorage.getItem(`habit_alert_config_${habit.id}`);
+        if (saved) {
+          try {
+            config = JSON.parse(saved);
+          } catch (e) {
+            console.error("Failed to parse reminder config", e);
+          }
+        }
+
+        if (config.enabled && config.time === currentTimeStr) {
+          const triggerKey = `${habit.id}-${currentTimeStr}-${todayDateStr}`;
+          if (!triggeredRef.current[triggerKey]) {
+            triggeredRef.current[triggerKey] = true;
+
+            const defaultCue = habit.cue || "when you have a free moment";
+            const defaultReward = habit.reward || "strengthen your momentum";
+            const defaultIdentity = habit.identity_name || "your best self";
+
+            let body = `Time for your daily practice: "${habit.name}". Simple, calm, and direct.`;
+            if (config.style === 'cue') {
+              body = `Anchor Cue: ${defaultCue}. Ready to practice "${habit.name}"?`;
+            } else if (config.style === 'identity') {
+              body = `Reinforce Identity: "${defaultIdentity}". Small actions build major habits.`;
+            } else if (config.style === 'reward') {
+              body = `Practice "${habit.name}" to unlock: ${defaultReward}. Show up for yourself.`;
+            }
+
+            // Play synth custom sound chime
+            const soundEnabled = localStorage.getItem('alertSoundEnabled') !== 'false';
+            if (soundEnabled) {
+              try {
+                playCalmChime();
+              } catch (soundError) {
+                console.warn("Synthesizer failed to spin up", soundError);
+              }
+            }
+
+            // Web browser native pushes
+            const notificationsEnabled = localStorage.getItem('notificationsEnabled') !== 'false';
+            if (notificationsEnabled && 'Notification' in window) {
+              try {
+                if (Notification.permission === 'granted') {
+                  new Notification(`Practice Reminder: ${habit.name}`, { body });
+                }
+              } catch (notifErr) {
+                console.warn("Desktop Notification construction block inside iframe", notifErr);
+              }
+            }
+
+            // In-App global sliding banner
+            triggerGlobalBanner({
+              id: Math.random().toString(36).substring(7),
+              title: `Practice Prompt ⚡`,
+              body: body,
+              habitName: habit.name,
+              habitId: habit.id,
+              category: habit.category,
+              cue: habit.cue,
+              reward: habit.reward,
+              identity: habit.identity_name
+            });
+          }
+        }
+      });
+    };
+
+    // Check immediately and tick every 15 seconds
+    checkReminders();
+    const intervalId = setInterval(checkReminders, 15000);
+    return () => clearInterval(intervalId);
+  }, [user, habits]);
   
   const [userProfile, setUserProfile] = useState<UserProfile>({ 
     name: '', 
@@ -235,7 +347,7 @@ export default function App() {
     { id: 'reflection', label: 'Log', icon: BookOpen },
     { id: 'experiments', label: 'Lab', icon: FlaskConical },
     { id: 'guide', label: 'Guide', icon: Info },
-    { id: 'settings', label: 'Config', icon: SettingsIcon },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   if (loading) {
@@ -383,6 +495,7 @@ export default function App() {
                 userName={userProfile.name}
                 level={userProfile.level}
                 xp={userProfile.xp}
+                triggerGlobalBanner={triggerGlobalBanner}
               />
             )}
             {activeSection === 'habits' && (
@@ -433,6 +546,77 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Global Interactive Notification Banners */}
+      <div className="fixed top-6 right-6 z-[999] w-full max-w-sm space-y-4 pointer-events-none px-4 sm:px-0">
+        <AnimatePresence>
+          {activeBanners.map((banner) => (
+            <motion.div
+              key={banner.id}
+              initial={{ opacity: 0, y: -50, scale: 0.9, rotateX: -15 }}
+              animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 220 }}
+              className="bg-brand-dark text-white rounded-[2rem] p-6 shadow-2xl relative border border-white/10 overflow-hidden pointer-events-auto flex flex-col gap-4"
+            >
+              {/* Top ambient glow/pulse color line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-primary via-emerald-400 to-indigo-500 animate-pulse" />
+
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-brand-primary/20 text-brand-accent rounded-xl shrink-0 mt-0.5 animate-bounce">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-brand-primary/80">
+                      {banner.category || "General Routine"}
+                    </span>
+                    <h4 className="font-extrabold text-sm tracking-tight leading-snug">{banner.habitName}</h4>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setActiveBanners(prev => prev.filter(b => b.id !== banner.id))}
+                  className="p-1 px-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs font-semibold text-white/80 leading-relaxed px-1 font-sans">
+                {banner.body}
+              </p>
+
+              {/* Reveal custom metadata when explicitly loaded */}
+              {(banner.cue || banner.reward || banner.identity) && (
+                <div className="bg-white/5 p-3 rounded-xl space-y-1 text-[10px] text-white/60 font-mono">
+                  {banner.cue && <div><strong className="text-brand-primary">Cue:</strong> {banner.cue}</div>}
+                  {banner.reward && <div><strong className="text-amber-400">Reward:</strong> {banner.reward}</div>}
+                  {banner.identity && <div><strong className="text-indigo-400">Identity:</strong> {banner.identity}</div>}
+                </div>
+              )}
+
+              {/* High-engagement Action buttons panel */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={async () => {
+                    toggleHabit(banner.habitId);
+                    setActiveBanners(prev => prev.filter(b => b.id !== banner.id));
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 p-3 bg-brand-primary hover:bg-brand-accent hover:text-brand-dark text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-95 outline-none"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Complete (+XP)
+                </button>
+                <button
+                  onClick={() => setActiveBanners(prev => prev.filter(b => b.id !== banner.id))}
+                  className="p-3 px-4 bg-white/10 hover:bg-white/15 text-white/80 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-95 text-center outline-none"
+                >
+                  Snooze
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* Footer / Mobile Nav space */}
       <div className="lg:hidden h-24" />

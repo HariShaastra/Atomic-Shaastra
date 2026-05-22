@@ -20,9 +20,11 @@ interface DashboardProps {
   toggleHabit: (id: string) => void;
   onNavigate: (section: any) => void;
   userName?: string;
+  level?: number;
+  xp?: number;
 }
 
-export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userName }: DashboardProps) {
+export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userName, level, xp }: DashboardProps) {
   const today = new Date().toISOString().split('T')[0];
   const todayLogs = logs.filter(l => l.completed_at === today);
   
@@ -106,41 +108,45 @@ export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userN
         <>
           {/* Primary Context Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="card md:col-span-2 group overflow-hidden relative border-none bg-white shadow-2xl shadow-brand-primary/5">
-              <div className="flex justify-between items-start mb-8">
+            {/* Today's Progress Card */}
+            <div className="card group overflow-hidden relative border-none bg-white shadow-2xl shadow-brand-primary/5 flex flex-col justify-between p-8">
+              <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-xs font-black text-brand-dark/30 uppercase tracking-[0.2em] mb-2">Today's Progress</h3>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black text-brand-dark">{completedCount}</span>
-                    <span className="text-xl font-bold text-brand-dark/20">/ {totalCount} done</span>
+                    <span className="text-5xl font-black text-brand-dark">{completedCount}</span>
+                    <span className="text-lg font-bold text-brand-dark/20">/ {totalCount} done</span>
                   </div>
                 </div>
                 <button 
                   onClick={() => shareToWhatsApp(getSharingText('habit', { name: "daily progress" }))}
-                  className="p-4 bg-brand-primary/5 text-brand-primary rounded-2xl hover:bg-brand-primary hover:text-white transition-all shadow-sm"
+                  className="p-3 bg-brand-primary/5 text-brand-primary rounded-xl hover:bg-brand-primary hover:text-white transition-all shadow-sm"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-4 h-4" />
                 </button>
               </div>
               
-              <div className="xp-bar-container mt-auto">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  className="xp-bar-fill"
-                />
-              </div>
-              <div className="flex justify-between mt-4">
-                <span className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.3em]">Consistency</span>
-                <span className="text-sm font-black text-brand-primary">{Math.round(progress)}%</span>
+              <div className="space-y-4">
+                <div className="xp-bar-container bg-slate-100">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    className="xp-bar-fill"
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.3em]">
+                  <span>Momentum</span>
+                  <span className="text-brand-primary">{Math.round(progress)}%</span>
+                </div>
               </div>
             </div>
 
+            {/* Current Streak Card */}
             <div className="card bg-brand-dark text-white border-none flex flex-col justify-between p-8 relative overflow-hidden group">
               <Flame className="absolute -right-4 -bottom-4 w-32 h-32 text-indigo-400/10 rotate-12" />
               <div>
                 <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Current Streak</h3>
-                <div className="text-7xl font-black tracking-tighter">5</div>
+                <div className="text-6xl font-black tracking-tighter">5</div>
               </div>
               <button 
                 onClick={() => onNavigate('tracker')}
@@ -148,6 +154,31 @@ export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userN
               >
                 Log History <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Growth Card (moved from sidebar) */}
+            <div className="card bg-slate-50 border border-brand-dark/5 p-8 flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-32 h-32 bg-brand-primary/5 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700" />
+              <div>
+                <h3 className="text-[10px] font-black text-brand-dark/30 uppercase tracking-[0.3em] mb-4">Self-Cultivation</h3>
+                <div className="flex justify-between items-baseline mb-4">
+                  <span className="text-5xl font-black text-brand-dark tracking-tighter">LVL {level || 1}</span>
+                  <span className="text-xs font-bold text-brand-primary">{(xp || 0)} / {(level || 1) * 100} XP</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="xp-bar-container h-3 bg-white border border-brand-dark/5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((xp || 0) / ((level || 1) * 100)) * 100}%` }}
+                    className="xp-bar-fill shadow-lg shadow-brand-primary/20" 
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[9px] font-black text-brand-dark/30 uppercase tracking-widest leading-none">
+                  <span>Growth Journey</span>
+                  <span>Keep practicing</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -208,33 +239,59 @@ export default function Dashboard({ habits, logs, toggleHabit, onNavigate, userN
               </div>
             </section>
 
-            {/* Small Navigation Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
-              <button 
-                onClick={() => onNavigate('habits')}
-                className="card bg-brand-primary text-white border-none p-8 flex flex-col justify-between group hover:rotate-1 transition-transform"
-              >
-                <div className="p-3 bg-white/20 rounded-2xl w-fit mb-6">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
+            {/* Simple Habit Wisdom & Navigation Cards */}
+            <div className="space-y-6">
+              {/* Compassionate Practice Wisdom */}
+              <div className="card bg-slate-50 border border-brand-dark/5 p-8 space-y-6">
                 <div>
-                  <h3 className="font-black text-xl mb-1 tracking-tight">Manage Habits</h3>
-                  <p className="text-xs font-bold text-white/60 tracking-widest uppercase">Edit Routines</p>
+                  <h3 className="text-xs font-black text-brand-dark/40 uppercase tracking-[0.2em] mb-1">Simple Wisdom</h3>
+                  <h4 className="font-black text-lg text-brand-dark tracking-tight">Build routines peacefully</h4>
                 </div>
-              </button>
+                
+                <ul className="space-y-4 text-xs font-medium text-brand-dark/70">
+                  <li className="flex gap-3">
+                    <span className="text-brand-primary font-black shrink-0">1.</span>
+                    <span><strong className="text-brand-dark">Start absurdly tiny</strong> — Drink one glass of water, read one page, or stretch for 2 minutes. Build consistency before intensity.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-amber-500 font-black shrink-0">2.</span>
+                    <span><strong className="text-brand-dark">Design your space</strong> — Keep your books visible or place a water bottle right next to your computer. Action flows from your environment.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-brand-secondary font-black shrink-0">3.</span>
+                    <span><strong className="text-brand-dark">Compassionate restart</strong> — Streaks will break, and that is a natural part of growth. Do not feel guilty. Click any habit on the left to wake up your discipline gently today.</span>
+                  </li>
+                </ul>
+              </div>
 
-              <button 
-                onClick={() => onNavigate('reflection')}
-                className="card flex items-center justify-between p-8"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-slate-100 rounded-2xl">
-                    <BookOpen className="w-5 h-5 text-brand-dark" />
+              {/* Quick Navigation Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button 
+                  onClick={() => onNavigate('habits')}
+                  className="card bg-brand-primary text-white border-none p-6 flex flex-col justify-between group hover:scale-[1.02] active:scale-95 transition-all text-left outline-none shadow-sm"
+                >
+                  <div className="p-2 bg-white/20 rounded-xl w-fit mb-4">
+                    <Zap className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-black text-brand-dark">Daily Journal</h3>
-                </div>
-                <ArrowRight className="w-5 h-5 text-slate-300" />
-              </button>
+                  <div>
+                    <h3 className="font-black text-lg mb-0.5 tracking-tight">Edit Habits</h3>
+                    <p className="text-[9px] font-bold text-white/60 tracking-widest uppercase">Modify Routines</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => onNavigate('reflection')}
+                  className="card bg-white border border-brand-dark/5 p-6 flex flex-col justify-between group hover:scale-[1.02] active:scale-95 transition-all text-left outline-none shadow-sm shadow-brand-dark/[0.02]"
+                >
+                  <div className="p-2 bg-slate-100 rounded-xl w-fit mb-4">
+                    <BookOpen className="w-4 h-4 text-brand-dark" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-lg text-brand-dark mb-0.5 tracking-tight">Reflect Log</h3>
+                    <p className="text-[9px] font-bold text-brand-dark/30 tracking-widest uppercase">Write Journal</p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </>

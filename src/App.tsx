@@ -51,7 +51,6 @@ import Settings from './components/Settings';
 import DailyTracker from './components/DailyTracker';
 import Guide from './components/Guide';
 import Logo from './components/Logo';
-import Mascot from './components/Mascot';
 
 type Section = 'dashboard' | 'habits' | 'tracker' | 'streaks' | 'reflection' | 'identity' | 'experiments' | 'stats' | 'focus' | 'settings' | 'guide';
 
@@ -312,30 +311,6 @@ export default function App() {
       </nav>
 
       <div className="p-8 space-y-4">
-        <div className="bg-slate-50 border-2 border-brand-dark/5 rounded-[2.5rem] p-6 space-y-4 shadow-xl shadow-brand-dark/[0.02] relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-16 h-16 bg-brand-primary/5 rounded-full blur-xl group-hover:scale-150 transition-transform" />
-          <div className="flex justify-between items-center relative">
-            <div>
-              <span className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.2em] block mb-1">Rank</span>
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-brand-primary fill-brand-primary" />
-                <span className="text-xl font-black text-brand-dark tracking-tighter">LVL {userProfile.level}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-black text-brand-dark/20 uppercase tracking-[0.2em] block mb-1">Status</span>
-              <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">{userProfile.xp} / {userProfile.level * 100}</span>
-            </div>
-          </div>
-          <div className="xp-bar-container h-3 bg-white border border-brand-dark/5">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${(userProfile.xp / (userProfile.level * 100)) * 100}%` }}
-              className="xp-bar-fill shadow-lg shadow-brand-primary/20" 
-            />
-          </div>
-        </div>
-        
         <button 
           onClick={logout}
           className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-brand-dark/40 hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-100"
@@ -406,6 +381,8 @@ export default function App() {
                 toggleHabit={toggleHabit} 
                 onNavigate={setActiveSection}
                 userName={userProfile.name}
+                level={userProfile.level}
+                xp={userProfile.xp}
               />
             )}
             {activeSection === 'habits' && (
@@ -457,8 +434,6 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Mascot message={mascotMessage} />
-      
       {/* Footer / Mobile Nav space */}
       <div className="lg:hidden h-24" />
     </div>
